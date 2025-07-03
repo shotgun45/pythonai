@@ -58,29 +58,41 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)])
     ]
 
-    # Generate content with system instruction and available functions
-    response = client.models.generate_content(
-        model="gemini-2.0-flash-001",
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions],
-            system_instruction=system_prompt
+    # Conversation loop (max 20 iterations)
+    max_iterations = 20
+    for iteration in range(max_iterations):
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-001",
+            contents=messages,
+            config=types.GenerateContentConfig(
+                tools=[available_functions],
+                system_instruction=system_prompt
+            )
         )
-    )
 
-    # Check for function calls in the response
-    if hasattr(response, "function_calls") and response.function_calls:
-        for function_call_part in response.function_calls:
-            function_call_result = call_function(function_call_part, verbose)
-            # Check for function_response in the returned Content
-            try:
-                function_response = function_call_result.parts[0].function_response.response
-            except (AttributeError, IndexError):
-                raise RuntimeError("Fatal: No function_response in call_function result!")
-            if verbose:
-                print(f"-> {function_response}")
-    else:
-        print(response.text)
+        function_called = False
+        # Add all candidate contents to the conversation
+        if hasattr(response, "candidates") and response.candidates:
+            for candidate in response.candidates:
+                if hasattr(candidate, "content") and candidate.content:
+                    messages.append(candidate.content)
+        # Check for function calls in the response
+        if hasattr(response, "function_calls") and response.function_calls:
+            for function_call_part in response.function_calls:
+                function_call_result = call_function(function_call_part, verbose)
+                # Check for function_response in the returned Content
+                try:
+                    function_response = function_call_result.parts[0].function_response.response
+                except (AttributeError, IndexError):
+                    raise RuntimeError("Fatal: No function_response in call_function result!")
+                if verbose:
+                    print(f"-> {function_response}")
+                # Add the function call result to the conversation
+                messages.append(function_call_result)
+                function_called = True
+        if not function_called:
+            print(response.text)
+            break
 
     if verbose:
         usage = response.usage_metadata
