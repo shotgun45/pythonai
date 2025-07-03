@@ -1,12 +1,11 @@
-from functions.get_file_content import get_file_content
+from functions.write_file import write_file
 
-# Test cases for the get_file_content function
+# Test cases for the write_file function
+print("\n--- Test 1: Overwrite calculator/lorem.txt ---")
+print(write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum"))
 
-print("\n--- Test: Read main.py ---")
-print(get_file_content("calculator", "main.py"))
+print("\n--- Test 2: Write to calculator/pkg/morelorem.txt ---")
+print(write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet"))
 
-print("\n--- Test: Read pkg/calculator.py ---")
-print(get_file_content("calculator", "pkg/calculator.py"))
-
-print("\n--- Test: Read /bin/cat (outside permitted directory) ---")
-print(get_file_content("calculator", "/bin/cat"))
+print("\n--- Test 3: Attempt to write outside permitted directory ---")
+print(write_file("calculator", "/tmp/temp.txt", "this should not be allowed"))
