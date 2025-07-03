@@ -1,11 +1,14 @@
-from functions.write_file import write_file
+from functions.run_python import run_python_file
 
-# Test cases for the write_file function
-print("\n--- Test 1: Overwrite calculator/lorem.txt ---")
-print(write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum"))
+# Test cases for the run_python_file function
+print("\n--- Test 1: Run main.py ---")
+print(run_python_file("calculator", "main.py"))
 
-print("\n--- Test 2: Write to calculator/pkg/morelorem.txt ---")
-print(write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet"))
+print("\n--- Test 2: Run tests.py ---")
+print(run_python_file("calculator", "tests.py"))
 
-print("\n--- Test 3: Attempt to write outside permitted directory ---")
-print(write_file("calculator", "/tmp/temp.txt", "this should not be allowed"))
+print("\n--- Test 3: Run ../main.py (should error) ---")
+print(run_python_file("calculator", "../main.py"))
+
+print("\n--- Test 4: Run nonexistent.py ---")
+print(run_python_file("calculator", "nonexistent.py"))
