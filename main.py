@@ -3,10 +3,10 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from functions.get_files_info import schema_get_files_info
-from functions.get_file_content import schema_get_file_content
-from functions.run_python import schema_run_python_file
-from functions.write_file import schema_write_file
+from functions.get_files_info import schema_get_files_info, get_files_info
+from functions.get_file_content import schema_get_file_content, get_file_content
+from functions.run_python import schema_run_python_file, run_python_file
+from functions.write_file import schema_write_file, write_file
 
 # Define available functions for the model
 available_functions = types.Tool(
@@ -71,7 +71,14 @@ def main():
     # Check for function calls in the response
     if hasattr(response, "function_calls") and response.function_calls:
         for function_call_part in response.function_calls:
-            print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+            function_call_result = call_function(function_call_part, verbose)
+            # Check for function_response in the returned Content
+            try:
+                function_response = function_call_result.parts[0].function_response.response
+            except (AttributeError, IndexError):
+                raise RuntimeError("Fatal: No function_response in call_function result!")
+            if verbose:
+                print(f"-> {function_response}")
     else:
         print(response.text)
 
@@ -80,6 +87,56 @@ def main():
         print(f"\nUser prompt: {user_prompt}")
         print(f"Prompt tokens: {usage.prompt_token_count}")
         print(f"Response tokens: {usage.candidates_token_count}")
+
+def call_function(function_call_part, verbose=False):
+    """
+    Handles calling a function by name with provided arguments.
+    If verbose is True, prints the function name and arguments.
+    Otherwise, prints just the function name.
+    Actually calls the function and prints the result.
+    """
+    # Map function names to actual functions
+    function_map = {
+        "get_files_info": get_files_info,
+        "get_file_content": get_file_content,
+        "run_python_file": run_python_file,
+        "write_file": write_file,
+    }
+    
+    # Prepare arguments
+    args = dict(function_call_part.args)
+    args["working_directory"] = "./calculator"
+
+    if verbose:
+        print(f"Calling function: {function_call_part.name}({args})")
+    else:
+        print(f" - Calling function: {function_call_part.name}")
+
+    # Call the function if it exists
+    func = function_map.get(function_call_part.name)
+    if func:
+        result = func(**args)
+        print(f"Result: {result}")
+        return types.Content(
+            role="tool",
+            parts=[
+                types.Part.from_function_response(
+                    name=function_call_part.name,
+                    response={"result": result},
+                )
+            ],
+        )
+    else:
+        print(f"Error: Function '{function_call_part.name}' not found.")
+        return types.Content(
+            role="tool",
+            parts=[
+                types.Part.from_function_response(
+                    name=function_call_part.name,
+                    response={"error": f"Unknown function: {function_call_part.name}"},
+                )
+            ],
+        )
 
 if __name__ == "__main__":
     main()
