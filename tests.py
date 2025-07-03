@@ -1,13 +1,12 @@
-from functions.get_files_info import get_files_info
+from functions.get_file_content import get_file_content
 
-print("Result for current directory:")
-print(get_files_info("calculator", "."))
+# Test cases for the get_file_content function
 
-print("\nResult for 'pkg' directory:")
-print(get_files_info("calculator", "pkg"))
+print("\n--- Test: Read main.py ---")
+print(get_file_content("calculator", "main.py"))
 
-print("\nResult for '/bin' directory:")
-print(get_files_info("calculator", "/bin"))
+print("\n--- Test: Read pkg/calculator.py ---")
+print(get_file_content("calculator", "pkg/calculator.py"))
 
-print("\nResult for '../' directory:")
-print(get_files_info("calculator", "../"))
+print("\n--- Test: Read /bin/cat (outside permitted directory) ---")
+print(get_file_content("calculator", "/bin/cat"))
